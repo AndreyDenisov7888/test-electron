@@ -1,2 +1,9 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+LICENSE text
+*.md text
+*.js text
+*.json text
+*.html text
+*.css text
+*.txt text
+*.png -crlf -diff
+*.svg -crlf -diff
