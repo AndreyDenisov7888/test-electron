@@ -214,6 +214,9 @@ $(function() {
                         case 'pid_tuning':
                             import('./../tabs/pid_tuning').then(() => TABS.pid_tuning.initialize(content_ready));
                             break;
+                        case 'pid_tuning_dupe':
+                            import('./../tabs/pid_tuning_dupe').then(() => TABS.pid_tuning_dupe.initialize(content_ready));
+                            break;
                         case 'receiver':
                             import('./../tabs/receiver').then(() => TABS.receiver.initialize(content_ready));
                             break;

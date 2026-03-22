@@ -28,6 +28,7 @@ const tabNames = [
  "osd",
  "outputs",
  "pid_tuning",
+ "pid_tuning_dupe",
  "ports",
  "programming",
  "receiver",
