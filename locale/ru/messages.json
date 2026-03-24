@@ -6279,6 +6279,9 @@
     "javascriptCompleteExample": {
         "message": "Готовый пример"
     },
+    "testtask": {
+        "message": "Тестовое"
+    },
     "javascriptOptimizationsApplied": {
         "message": "Применены оптимизации:"
     }

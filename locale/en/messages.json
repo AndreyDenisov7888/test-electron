@@ -6256,6 +6256,9 @@
   "javascriptGlobalVariables": {
     "message": "Global Variables"
   },
+  "testtask": {
+    "message": "Testtask"
+    },
   "javascriptCompleteExample": {
     "message": "Complete Example"
   }
