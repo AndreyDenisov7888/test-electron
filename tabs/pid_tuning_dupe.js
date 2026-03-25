@@ -17,6 +17,43 @@ import CONFIGURATOR from './../js/data_storage';
 import BitHelper from './../js/bitHelper';  
 import store from '../js/store';
 
+import { titleize } from  'inflection';
+import semver from 'semver';
+import mapSeries from 'promise-map-series';
+import jBox from 'jbox';
+import { debounce } from 'throttle-debounce';
+import { globalSettings } from '../js/globalSettings';
+import { PortHandler } from '../js/port_handler';
+
+import OSD, { FONT, HARDWARE } from '../tabs/osd_dupe';
+
+
+HARDWARE.update = function(callback) {
+    HARDWARE.init();
+    MSP.send_message(MSPCodes.MSP2_CF_SERIAL_CONFIG, false, false, function() {
+        $.each(FC.SERIAL_CONFIG.ports, function(index, port){
+            if(port.functions.includes('DJI_FPV')) {
+                HARDWARE.capabilities.isDjiHdFpv = true;
+            }
+            if(port.functions.includes('MSP_DISPLAYPORT')) {
+                HARDWARE.capabilities.isMspDisplay = true;
+            }
+            if (port.functions.includes('ESC')) {
+                HARDWARE.capabilities.useESCTelemetry = true;
+            }
+        });
+        mspHelper.loadRxConfig(function() {
+            HARDWARE.capabilities.useCRSF = (FC.RX_CONFIG.serialrx_provider == 6);
+            HARDWARE.capabilities.useRx = (FC.RX_CONFIG.serialrx_provider == 6 || FC.RX_CONFIG.receiver_type == 2 || FC.RX_CONFIG.serialrx_provider == 12);
+            mspHelper.loadSensorConfig(function () {
+                HARDWARE.capabilities.useBaro  = (FC.SENSOR_CONFIG.barometer != 0);
+                HARDWARE.capabilities.usePitot = (FC.SENSOR_CONFIG.pitot != 0);
+                if (callback) callback();
+            });
+        });
+    });
+};
+
 TABS.pid_tuning_dupe = {
     rateChartHeight: 117
 };
@@ -55,7 +92,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         import('./pid_tuning_dupe.html?raw').then(({default: pidStructHtml}) => {
             
             // 🔹 3. Затем загружаем osd_dupe.html
-            //import('./osd_dupe.html?raw').then(({default: osdHtml}) => {
+            import('./osd_dupe.html?raw').then(({default: osdHtml}) => {
                 
                 // 🔹 4. Извлекаем только контент из pid_tuning_dupe.html (без подвкладок)
                 // Предполагаем, что pid_tuning_dupe.html содержит только структуру обёртки
@@ -71,7 +108,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                                 <span class="subtab__header_label" 
                                       for="subtab-pid_dupe" 
                                       data-i18n="tabRawSensorData"></span>
-                                <span class="subtab__header_label subtab__header_label--current" 
+                                <span class="subtab__header_label " 
                                       for="subtab-pid-other_dupe" 
                                       data-i18n="tabOSD"></span>
                             </div>
@@ -82,8 +119,8 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                             </div>
 
                             <!-- Контент: OSD (второй) -->
-                            <div id="subtab-pid-other_dupe" class="subtab__content--current">
-                               
+                            <div id="subtab-pid-other_dupe" class="subtab__content">
+                               <!-- ${osdHtml}
                             </div>
 
                         </div>
@@ -93,7 +130,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                 // 🔹 5. Загружаем объединённый HTML с обработкой
                 GUI.load(combinedHtml, Settings.processHtml(process_html));
                 
-            //}); // ← закрываем osd_dupe import
+            }); // ← закрываем osd_dupe import
         }); // ← закрываем pid_tuning_dupe import
     }); // ← закрываем sensors_dupe import
 }
@@ -124,10 +161,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
     function drawRollPitchYawExpo() {
         
-            // ✅ Проверка: активна ли подвкладка OSD/PID
-        if (!$('#subtab-pid-other_dupe').hasClass('subtab__content--current')) {
-            return;  // Не рисуем, если вкладка скрыта
-        }
+
         
         let pitch_roll_curve = $('.pitch_roll_curve canvas').get(0);
         let manual_expo_curve = $('.manual_expo_curve canvas').get(0);
@@ -294,10 +328,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     // 🔹 Инициализация подвкладки Sensors
     function initSensorsTab() {
     // ✅ Проверка: если вкладка не активна — выходим
-    if (GUI.active_tab !== 'pid_tuning_dupe' || !$('#subtab-pid_dupe').hasClass('subtab__content--current')) {
-        console.log('Sensors tab: not active, skipping init');
-        return;
-    }
+
 
     console.log('Sensors tab: initializing...');
 
@@ -411,8 +442,8 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
     // Обработчик изменения чекбоксов
     $('.tab-sensors .info .checkboxes input').on('change', function () {
-        // 🔹 Проверка: если вкладка не активна — не обрабатываем
-        if (!$('#subtab-pid_dupe').hasClass('subtab__content--current')) return;
+        
+        
 
         var enable = $(this).prop('checked');
         var index = $(this).parent().index();
@@ -539,9 +570,6 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     // === Функция startPolling ===
     function startPolling() {
         // 🔹 Проверка: не запускать polling, если подвкладка не активна
-        if (!$('#subtab-pid_dupe').hasClass('subtab__content--current')) {
-            return;
-        }
 
         var rates = {
             'gyro': parseInt($('.tab-sensors select[name="gyro_refresh_rate"]').val(), 10),
@@ -678,6 +706,11 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         }
     }
     }
+    function initOSDTab (){
+
+        return;
+
+    }
 
 
     function process_html() {
@@ -752,29 +785,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         console.log('Tab check:', { isSensorsActive, isOSDActive, activeTab: GUI.active_tab });
 
-        // 🔹 Запускать код Sensors только если активна подвкладка Sensors
-        if (isSensorsActive && GUI.active_tab === 'pid_tuning_dupe') {
-            initSensorsTab();
-        }
-
-        // 🔹 Запускать код OSD только если активна подвкладка PID
-        if (isOSDActive && GUI.active_tab === 'pid_tuning_dupe') {
-            //initOSDTab();
-        }
-
-        // Обработчик переключения для остановки/запуска polling
-        $('.subtab__header_label').on('click', function() {
-            setTimeout(function() {
-                const isSensorsNow = $('#subtab-sensors').hasClass('subtab__content--current');
-                if (isSensorsNow) {
-                    console.log('Sensors tab activated');
-                    if (typeof startPolling === 'function') startPolling();
-                } else {
-                    console.log('Sensors tab deactivated');
-                    interval.killAll(['IMU_pull', 'altitude_pull', 'sonar_pull', 'airspeed_pull', 'temperature_pull', 'debug_pull']);
-                }
-            }, 50);
-        });
+        initSensorsTab();initOSDTab();
 
         $('.action-resetPIDs').on('click', function() {
 
