@@ -4,17 +4,25 @@
     <div id="tuning-wrapper" class="content_wrapper">
         <div class="tab_title subtab__header">
             <span class="subtab__header_label" for="subtab-pid_dupe" data-i18n="tabRawSensorData"></span>
-            <span class="subtab__header_label subtab__header_label" for="subtab-pid-other_dupe" data-i18n="tabOSD"></span>
+            <span class="subtab__header_label subtab__header_label--current" for="subtab-filters" data-i18n="tabOSD"></span>
         </div>
-        <div id="subtab-pid_dupe" class="subtab__content subtab__content">
-            
+        <div id="subtab-pid_dupe" class="subtab__content subtab__content--current">
+
         </div>
 
-        <div id="subtab-pid-other_dupe" class="subtab__content">
+        <div id="subtab-filters" class="subtab__content subtab__content--current">
             
         </div>
 
 
     </div>
-    
+    <div class="clear-both"></div>
+    <div id="tuning-footer" class="content_toolbar">
+        <div class="btn save_btn">
+            <a class="update" href="#" data-i18n="pidTuning_ButtonSave"></a>
+        </div>
+        <div class="btn refresh_btn">
+            <a class="refresh" href="#" data-i18n="pidTuning_ButtonRefresh"></a>
+        </div>
+    </div>
 </div>

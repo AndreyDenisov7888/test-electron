@@ -28,19 +28,6 @@ import { PortHandler } from '../js/port_handler';
 import OSD, { FONT, HARDWARE } from '../tabs/osd_dupe';
 
 
-
-let HARDWARE = {};
-HARDWARE.init = function() {
-    HARDWARE.capabilities = {
-        isDjiHdFpv: false,
-        isMspDisplay: false,
-        useESCTelemetry: false,
-        useRx: false,
-        useCRSF: false,
-        useBaro: false,
-        usePitot: false
-    };
-};
 HARDWARE.update = function(callback) {
     HARDWARE.init();
     MSP.send_message(MSPCodes.MSP2_CF_SERIAL_CONFIG, false, false, function() {
@@ -93,9 +80,9 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     if (GUI.active_tab != 'pid_tuning_dupe') {
         GUI.active_tab = 'pid_tuning_dupe';
     }
-    if (GUI.active_subtab != 'pid_dupe') {
-        GUI.active_subtab = 'pid_dupe';
-    }
+    // if (GUI.active_subtab != 'pid_dupe') {
+    //     GUI.active_subtab = 'pid_dupe';
+    // }
 
     function load_html() {
     // 🔹 1. Сначала загружаем sensors_dupe.html
@@ -112,32 +99,35 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                 // Если нет — создаём обёртку вручную:
                 
                 const combinedHtml = `
-                    <div id="content-watermark"></div>
-                    <div class="tab-pid_tuning_dupe toolbar_fixed_bottom">
-                        <div id="tuning-wrapper" class="content_wrapper">
+                <div class="tab-pid_tuning_dupe toolbar_fixed_bottom">
+                    <div id="tuning-wrapper" class="content_wrapper">
+                        
+                        <!-- Заголовки подвкладок -->
+                        <div class="tab_title subtab__header">
                             
-                            <!-- Заголовки подвкладок -->
-                            <div class="tab_title subtab__header">
-                                <span class="subtab__header_label" 
-                                      for="subtab-pid_dupe" 
-                                      data-i18n="tabRawSensorData"></span>
-                                <span class="subtab__header_label subtab__header_label--current" 
-                                      for="subtab-pid-other_dupe" 
-                                      data-i18n="tabOSD"></span>
-                            </div>
+                            <!-- ✅ OSD: активный (добавлен класс --current) -->
+                            <span class="subtab__header_label subtab__header_label--current" 
+                                for="subtab-filters" 
+                                data-i18n="tabOSD"></span>
 
-                            <!-- Контент: Sensors (первый, активный по умолчанию) -->
-                            <div id="subtab-pid_dupe" class="subtab__content subtab__content">
-                                ${sensorsHtml}
-                            </div>
-
-                            <!-- Контент: OSD (второй) -->
-                            <div id="subtab-pid-other_dupe" class="subtab__content--current">
-                                ${osdHtml}
-                            </div>
-
+                            <!-- Sensors: неактивный (убран класс --current) -->
+                            <span class="subtab__header_label" 
+                                for="subtab-pid_dupe" 
+                                data-i18n="tabRawSensorData"></span>
                         </div>
+
+                        <!-- ✅ Контент: OSD (активен, добавлен класс --current) -->
+                        <div id="subtab-filters" class="subtab__content subtab__content--current">
+                            ${osdHtml}
+                        </div>
+
+                         <!-- Контент: Sensors (скрыт, убран класс --current) -->
+                        <div id="subtab-pid_dupe" class="subtab__content">
+                            ${sensorsHtml}
+                        </div>
+
                     </div>
+                </div>
                 `;
                 
                 // 🔹 5. Загружаем объединённый HTML с обработкой
@@ -174,10 +164,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
     function drawRollPitchYawExpo() {
         
-            // ✅ Проверка: активна ли подвкладка OSD/PID
-        if (!$('#subtab-pid-other_dupe').hasClass('subtab__content--current')) {
-            return;  // Не рисуем, если вкладка скрыта
-        }
+
         
         let pitch_roll_curve = $('.pitch_roll_curve canvas').get(0);
         let manual_expo_curve = $('.manual_expo_curve canvas').get(0);
@@ -344,10 +331,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     // 🔹 Инициализация подвкладки Sensors
     function initSensorsTab() {
     // ✅ Проверка: если вкладка не активна — выходим
-    if (GUI.active_tab !== 'pid_tuning_dupe' || !$('#subtab-pid_dupe').hasClass('subtab__content--current')) {
-        console.log('Sensors tab: not active, skipping init');
-        return;
-    }
+
 
     console.log('Sensors tab: initializing...');
 
@@ -461,8 +445,8 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
     // Обработчик изменения чекбоксов
     $('.tab-sensors .info .checkboxes input').on('change', function () {
-        // 🔹 Проверка: если вкладка не активна — не обрабатываем
-        if (!$('#subtab-pid_dupe').hasClass('subtab__content--current')) return;
+        
+        
 
         var enable = $(this).prop('checked');
         var index = $(this).parent().index();
@@ -589,9 +573,6 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     // === Функция startPolling ===
     function startPolling() {
         // 🔹 Проверка: не запускать polling, если подвкладка не активна
-        if (!$('#subtab-pid_dupe').hasClass('subtab__content--current')) {
-            return;
-        }
 
         var rates = {
             'gyro': parseInt($('.tab-sensors select[name="gyro_refresh_rate"]').val(), 10),
@@ -728,308 +709,46 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         }
     }
     }
+    function initOSDTab (){
+        console.log('[PID_DUPE] initOSDTab called');
 
-    // 🔹 Инициализация подвкладки OSD
-    async function initOSDTab() {
-        // ✅ Проверка: если вкладка не активна — выходим
-        if (!$('#subtab-pid-other_dupe').hasClass('subtab__content--current')) {
-            console.log('OSD subtab: not active, skipping init');
+        // Проверка: загружен ли модуль OSD
+        if (typeof OSD === 'undefined' || !OSD.GUI) {
+            console.error('[PID_DUPE] OSD module not loaded!');
             return;
         }
-        if (!HARDWARE.capabilities) {
+
+        const $osdContent = $('#subtab-filters');
+        const isOSDActive = $osdContent.hasClass('subtab__content--current');
+
+        console.log('[PID_DUPE] OSD Active:', isOSDActive);
+
+        // Инициализируем только если вкладка активна (экономия ресурсов)
+        if (isOSDActive) {
+            // Инициализация шрифтов и железа
+            FONT.initData();
             HARDWARE.init();
-        }
-        console.log('OSD tab: initializing...');
-        
-        if (typeof OSD !== 'undefined' && typeof FONT !== 'undefined') {
-            OSD.initData();
-            FONT.initData();
-        } else {
-            console.error('OSD or FONT not defined!');
-            return;
-        }
-
-        // === Константы и кэш ===
-        const $osdTab = $('#subtab-pid-other_dupe');
-        const isOsdActive = () => $osdTab.hasClass('subtab__content--current');
-
-        // === Инициализация данных OSD ===
-        OSD.initData();
-
-        // === Вспомогательные функции ===
-        
-        // Обновление превью
-        function updateOSDPreview() {
-            if (!isOsdActive()) return;
-            if (OSD.data?.display_size) {
-                OSD.GUI.updatePreviews();
-            }
-        }
-
-        // Обновление имён пилота и крафта
-        function updateNames() {
-            if (!isOsdActive()) return;
-            updatePilotAndCraftNames();
-            updateOSDPreview();
-        }
-
-        // Обновление индикаторов переключателей
-        function updateSwitchIndicators() {
-            if (!isOsdActive()) return;
-            refreshOSDSwitchIndicators();
-            updateOSDPreview();
-        }
-
-        // Обновление превью пан-серво
-        function updateServoPreview() {
-            if (!isOsdActive()) return;
-            updatePanServoPreview();
-            updateOSDPreview();
-        }
-
-        // Валидация текста (только разрешённые символы)
-        function sanitizeText($el, maxLength = Infinity) {
-            const testExp = /^[A-Za-z0-9 !_,:;=@#%&\-\*^\(\)\.\+<>\[\]]/;
-            let text = $el.val();
-            if (testExp.test(text.slice(-1))) {
-                $el.val(text.toUpperCase().slice(0, maxLength));
-            } else {
-                $el.val(text.slice(0, -1));
-            }
-        }
-
-        // === Обработчики событий ===
-
-        // Видео-режим
-        function setupVideoModeHandler() {
-            const $videoTypes = $('.video-types');
-            if (!$videoTypes.length) return;
             
-            $videoTypes.off('change').on('change', function () {
-                if (!isOsdActive()) return;
-                OSD.data.preferences.video_system = $(this).find(':selected').data('type');
-                OSD.updateDisplaySize();
-                OSD.GUI.saveConfig();
-                updateOSDPreview();
-            });
-        }
-
-        // Единицы измерения
-        function setupUnitsHandler() {
-            const $unitMode = $('#unit_mode');
-            if (!$unitMode.length) return;
-            
-            $unitMode.off('change').on('change', function () {
-                if (!isOsdActive()) return;
-                const selected = $(this).find(':selected');
-                OSD.data.preferences.units = selected.data('type');
-                globalSettings.osdUnits = OSD.data.preferences.units;
-                OSD.GUI.saveConfig();
-                updateOSDPreview();
-            });
-        }
-
-        // Элементы OSD (вкл/выкл + позиция)
-        function setupElementHandlers() {
-            // Чекбоксы видимости
-            $('.display-field input[type="checkbox"]').off('change').on('change', function () {
-                if (!isOsdActive()) return;
-                const item = $(this).data('item');
-                if (!item) return;
-                
-                const itemData = OSD.data.items[item.id];
-                const $position = $(this).parent().find('.position.' + item.name);
-                
-                itemData.isVisible = !itemData.isVisible;
-                
-                if (itemData.isVisible) {
-                    OSD.msp.helpers.calculate.coords(itemData);
-                    if (itemData.x > OSD.data.display_size.x || itemData.y > OSD.data.display_size.y) {
-                        itemData.x = itemData.y = itemData.position = 0;
-                    }
-                    $position.show();
-                } else {
-                    $position.hide();
-                }
-                
-                OSD.GUI.saveItem(item);
-                updateOSDPreview();
-            });
-
-            // Поля позиции (с debounce)
-            $('.display-field input.position').off('change').on('change', debounce(250, function () {
-                if (!isOsdActive()) return;
-                const item = $(this).data('item');
-                if (!item) return;
-                
-                const itemData = OSD.data.items[item.id];
-                itemData.position = parseInt($(this).val());
-                OSD.msp.helpers.calculate.coords(itemData);
-                
-                OSD.GUI.saveItem(item);
-                updateOSDPreview();
-            }));
-        }
-
-        // Настройки: имена, индикаторы, серво
-        function setupSettingsHandlers() {
-            // Craft name
-            $('#craft_name').off('keyup').on('keyup', function () {
-                if (!isOsdActive()) return;
-                sanitizeText($(this));
-                updateNames();
-            });
-
-            // Pilot name
-            $('#pilot_name').off('keyup').on('keyup', function () {
-                if (!isOsdActive()) return;
-                sanitizeText($(this));
-                updateNames();
-            });
-
-            // Switch indicators (макс. 4 символа)
-            $('.osdSwitchIndName').off('keyup').on('keyup', function () {
-                if (!isOsdActive()) return;
-                sanitizeText($(this), 4);
-                updateSwitchIndicators();
-            });
-
-            // Pan servo settings
-            $('#osdPanServoIndicatorShowDegrees, #panServoOutput')
-                .off('change')
-                .on('change', function () {
-                    if (!isOsdActive()) return;
-                    updateServoPreview();
-                });
-        }
-
-        // Переключение подвкладок
-        function setupSubtabSwitchHandler() {
-            $('.subtab__header_label').off('click').on('click', function () {
-                setTimeout(function () {
-                    if (isOsdActive()) {
-                        console.log('OSD tab activated, updating preview');
-                        updateOSDPreview();
-                    }
-                }, 100);
-            });
-        }
-
-        // Кнопки действий (Save/Refresh)
-        function setupActionHandlers() {
-            // Save
-            $('a.update').off('click').on('click', function () {
-                if (!isOsdActive()) return;
-                OSD.saveConfig(function () {
-                    GUI.log(i18n.getMessage('osdConfigurationSaved'));
-                    updateOSDPreview();
-                });
-            });
-
-            // Refresh
-            $('a.refresh').off('click').on('click', function () {
-                if (!isOsdActive()) return;
-                loadOsdData(function () {
+            // Запуск обновления интерфейса OSD
+            // Используем setTimeout, чтобы DOM успел отрисоваться
+            setTimeout(() => {
+                if (OSD.data && OSD.data.supported) {
                     OSD.GUI.updateAll();
-                    updateOSDPreview();
-                    GUI.log(i18n.getMessage('osdDataRefreshed'));
-                });
-            });
+                } else {
+                    // Если данные еще не загружены, пробуем запустить reload
+                    OSD.GUI.update();
+                }
+            }, 100);
         }
-
-        // Шрифты
-        function initFonts() {
-            FONT.initData();
-            
-            const $fontPicker = $('.fontbuttons button');
-            $fontPicker.off('click').on('click', function () {
-                if (!isOsdActive()) return;
-                const fontFile = $(this).data('font-file');
-                if (!fontFile) return;
-                
-                $fontPicker.removeClass('active');
-                $(this).addClass('active');
-                store.set('osd_font', fontFile);
-                
-                import(`./../resources/osd/analogue/${fontFile}.mcm?raw`)
-                    .then(({ default: data }) => {
-                        FONT.parseMCMFontFile(data);
-                        FONT.preview($('.font-preview'));
-                        updateOSDPreview();
-                    });
-            });
-        }
-
-        // === Загрузка данных OSD с полётника ===
-        function loadOsdData(callback) {
-            MSP.promise(MSPCodes.MSP2_INAV_OSD_LAYOUTS).then(function (resp) {
-                OSD.msp.decodeLayoutCounts(resp);
-                
-                const ids = Array.apply(null, { length: OSD.data.layout_count }).map(Number.call, Number);
-                const layouts = mapSeries(ids, function (layoutIndex) {
-                    const data = [];
-                    data.push8(layoutIndex);
-                    return MSP.promise(MSPCodes.MSP2_INAV_OSD_LAYOUTS, data)
-                        .then(function (resp) {
-                            OSD.msp.decodeLayout(layoutIndex, resp);
-                        });
-                });
-                
-                layouts.then(function () {
-                    OSD.updateSelectedLayout(OSD.data.selected_layout || 0);
-                    
-                    MSP.promise(MSPCodes.MSP2_INAV_OSD_ALARMS).then(function (resp) {
-                        OSD.msp.decodeAlarms(resp);
-                        
-                        MSP.promise(MSPCodes.MSP2_INAV_OSD_PREFERENCES).then(function (resp) {
-                            OSD.data.supported = true;
-                            OSD.msp.decodePreferences(resp);
-                            
-                            MSP.promise(MSPCodes.MSP2_INAV_CUSTOM_OSD_ELEMENTS).then(() => {
-                                mspHelper.loadOsdCustomElements(() => {
-                                    //createCustomElements();
-                                    if (callback) callback();
-                                });
-                            });
-                        });
-                    });
-                });
-            });
-        }
-
-        // === Основной поток инициализации ===
-        function startInit() {
-            loadOsdData(function () {
-                // Обновляем UI
-                OSD.GUI.updateVideoMode();
-                OSD.GUI.updateUnits();
-                OSD.GUI.updateFields();
-                
-                // Привязываем обработчики
-                setupVideoModeHandler();
-                setupUnitsHandler();
-                setupElementHandlers();
-                setupSettingsHandlers();
-                setupSubtabSwitchHandler();
-                setupActionHandlers();
-                initFonts();
-                
-                // Финальное обновление
-                updateOSDPreview();
-                
-                // Показываем/скрываем поддержку
-                $('.unsupported, .supported').fadeOut();
-                $(OSD.data.supported ? '.supported' : '.unsupported').fadeIn();
-            });
-        }
-
-        // Запускаем
-        startInit();
     }
+
 
     function process_html() {
         // translate to user-selected language
         i18n.localize();
+
+        //tabs.init($('.tab-pid_tuning_dupe'));
+
 
         $('#ez_tune_enabled').on('change', function () {
             if ($(this).is(":checked")) {
@@ -1095,33 +814,11 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         // 🔹 Проверка: какая подвкладка активна?
         const isSensorsActive = $('#subtab-pid_dupe').hasClass('subtab__content--current');
-        const isOSDActive = $('#subtab-pid-other_dupe').hasClass('subtab__content--current');
+        const isOSDActive = $('#subtab-filters').hasClass('subtab__content--current');
 
         console.log('Tab check:', { isSensorsActive, isOSDActive, activeTab: GUI.active_tab });
 
-        // 🔹 Запускать код Sensors только если активна подвкладка Sensors
-        if (isSensorsActive && GUI.active_tab === 'pid_tuning_dupe') {
-            initSensorsTab();
-        }
-
-        // 🔹 Запускать код OSD только если активна подвкладка PID
-        if (isOSDActive && GUI.active_tab === 'pid_tuning_dupe') {
-            initOSDTab();
-        }
-
-        // Обработчик переключения для остановки/запуска polling
-        $('.subtab__header_label').on('click', function() {
-            setTimeout(function() {
-                const isSensorsNow = $('#subtab-sensors').hasClass('subtab__content--current');
-                if (isSensorsNow) {
-                    console.log('Sensors tab activated');
-                    if (typeof startPolling === 'function') startPolling();
-                } else {
-                    console.log('Sensors tab deactivated');
-                    interval.killAll(['IMU_pull', 'altitude_pull', 'sonar_pull', 'airspeed_pull', 'temperature_pull', 'debug_pull']);
-                }
-            }, 50);
-        });
+        initSensorsTab();initOSDTab();
 
         $('.action-resetPIDs').on('click', function() {
 
