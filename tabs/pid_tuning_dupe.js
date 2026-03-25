@@ -99,32 +99,35 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                 // Если нет — создаём обёртку вручную:
                 
                 const combinedHtml = `
-                    <div id="content-watermark"></div>
-                    <div class="tab-pid_tuning_dupe toolbar_fixed_bottom">
-                        <div id="tuning-wrapper" class="content_wrapper">
+                <div class="tab-pid_tuning_dupe toolbar_fixed_bottom">
+                    <div id="tuning-wrapper" class="content_wrapper">
+                        
+                        <!-- Заголовки подвкладок -->
+                        <div class="tab_title subtab__header">
                             
-                            <!-- Заголовки подвкладок -->
-                            <div class="tab_title subtab__header">
-                                <span class="subtab__header_label" 
-                                      for="subtab-pid_dupe" 
-                                      data-i18n="tabRawSensorData"></span>
-                                <span class="subtab__header_label " 
-                                      for="subtab-pid-other_dupe" 
-                                      data-i18n="tabOSD"></span>
-                            </div>
+                            <!-- ✅ OSD: активный (добавлен класс --current) -->
+                            <span class="subtab__header_label subtab__header_label--current" 
+                                for="subtab-filters" 
+                                data-i18n="tabOSD"></span>
 
-                            <!-- Контент: Sensors (первый, активный по умолчанию) -->
-                            <div id="subtab-pid_dupe" class="subtab__content subtab__content">
-                                ${sensorsHtml}
-                            </div>
-
-                            <!-- Контент: OSD (второй) -->
-                            <div id="subtab-pid-other_dupe" class="subtab__content">
-                               <!-- ${osdHtml}
-                            </div>
-
+                            <!-- Sensors: неактивный (убран класс --current) -->
+                            <span class="subtab__header_label" 
+                                for="subtab-pid_dupe" 
+                                data-i18n="tabRawSensorData"></span>
                         </div>
+
+                        <!-- ✅ Контент: OSD (активен, добавлен класс --current) -->
+                        <div id="subtab-filters" class="subtab__content subtab__content--current">
+                            <div class="note_spacer"> <p>Texty</p></div>
+                        </div>
+
+                         <!-- Контент: Sensors (скрыт, убран класс --current) -->
+                        <div id="subtab-pid_dupe" class="subtab__content">
+                            ${sensorsHtml}
+                        </div>
+
                     </div>
+                </div>
                 `;
                 
                 // 🔹 5. Загружаем объединённый HTML с обработкой
@@ -717,6 +720,9 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         // translate to user-selected language
         i18n.localize();
 
+        tabs.init($('.tab-pid_tuning_dupe'));
+
+
         $('#ez_tune_enabled').on('change', function () {
             if ($(this).is(":checked")) {
                 FC.EZ_TUNE.enabled = 1;
@@ -777,11 +783,11 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         updatePreview();
 
-        tabs.init($('.tab-pid_tuning_dupe'));
+        //tabs.init($('.tab-pid_tuning_dupe'));
 
         // 🔹 Проверка: какая подвкладка активна?
         const isSensorsActive = $('#subtab-pid_dupe').hasClass('subtab__content--current');
-        const isOSDActive = $('#subtab-pid-other_dupe').hasClass('subtab__content--current');
+        const isOSDActive = $('#subtab-filters').hasClass('subtab__content--current');
 
         console.log('Tab check:', { isSensorsActive, isOSDActive, activeTab: GUI.active_tab });
 
