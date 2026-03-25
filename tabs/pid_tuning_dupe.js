@@ -118,7 +118,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
                         <!-- ✅ Контент: OSD (активен, добавлен класс --current) -->
                         <div id="subtab-filters" class="subtab__content subtab__content--current">
-                            <div class="note_spacer"> <p>Texty</p></div>
+                            ${osdHtml}
                         </div>
 
                          <!-- Контент: Sensors (скрыт, убран класс --current) -->
@@ -710,9 +710,36 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     }
     }
     function initOSDTab (){
+        console.log('[PID_DUPE] initOSDTab called');
 
-        return;
+        // Проверка: загружен ли модуль OSD
+        if (typeof OSD === 'undefined' || !OSD.GUI) {
+            console.error('[PID_DUPE] OSD module not loaded!');
+            return;
+        }
 
+        const $osdContent = $('#subtab-filters');
+        const isOSDActive = $osdContent.hasClass('subtab__content--current');
+
+        console.log('[PID_DUPE] OSD Active:', isOSDActive);
+
+        // Инициализируем только если вкладка активна (экономия ресурсов)
+        if (isOSDActive) {
+            // Инициализация шрифтов и железа
+            FONT.initData();
+            HARDWARE.init();
+            
+            // Запуск обновления интерфейса OSD
+            // Используем setTimeout, чтобы DOM успел отрисоваться
+            setTimeout(() => {
+                if (OSD.data && OSD.data.supported) {
+                    OSD.GUI.updateAll();
+                } else {
+                    // Если данные еще не загружены, пробуем запустить reload
+                    OSD.GUI.update();
+                }
+            }, 100);
+        }
     }
 
 
@@ -720,7 +747,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         // translate to user-selected language
         i18n.localize();
 
-        tabs.init($('.tab-pid_tuning_dupe'));
+        //tabs.init($('.tab-pid_tuning_dupe'));
 
 
         $('#ez_tune_enabled').on('change', function () {
@@ -783,7 +810,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         updatePreview();
 
-        //tabs.init($('.tab-pid_tuning_dupe'));
+        tabs.init($('.tab-pid_tuning_dupe'));
 
         // 🔹 Проверка: какая подвкладка активна?
         const isSensorsActive = $('#subtab-pid_dupe').hasClass('subtab__content--current');
