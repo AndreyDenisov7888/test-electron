@@ -3575,7 +3575,7 @@ TABS.osd.initialize = function (callback) {
     }
 
     HARDWARE.update(function () {
-        import('./osd.html?raw').then(({default: html}) => GUI.load(html, Settings.processHtml(function() {
+        import('./osd_dupe.html?raw').then(({default: html}) => GUI.load(html, Settings.processHtml(function() {
             // translate to user-selected language
            i18n.localize();
 

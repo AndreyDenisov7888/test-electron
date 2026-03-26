@@ -80,23 +80,17 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     if (GUI.active_tab != 'pid_tuning_dupe') {
         GUI.active_tab = 'pid_tuning_dupe';
     }
-    // if (GUI.active_subtab != 'pid_dupe') {
-    //     GUI.active_subtab = 'pid_dupe';
-    // }
+
 
     function load_html() {
-    // 🔹 1. Сначала загружаем sensors_dupe.html
+
     import('./sensors_dupe.html?raw').then(({default: sensorsHtml}) => {
         
-        // 🔹 2. Затем загружаем pid_tuning_dupe.html (основная структура)
+
         import('./pid_tuning_dupe.html?raw').then(({default: pidStructHtml}) => {
             
-            // 🔹 3. Затем загружаем osd_dupe.html
+
             import('./osd_dupe.html?raw').then(({default: osdHtml}) => {
-                
-                // 🔹 4. Извлекаем только контент из pid_tuning_dupe.html (без подвкладок)
-                // Предполагаем, что pid_tuning_dupe.html содержит только структуру обёртки
-                // Если нет — создаём обёртку вручную:
                 
                 const combinedHtml = `
                 <div class="tab-pid_tuning_dupe toolbar_fixed_bottom">
@@ -130,17 +124,17 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
                 </div>
                 `;
                 
-                // 🔹 5. Загружаем объединённый HTML с обработкой
+                
                 GUI.load(combinedHtml, Settings.processHtml(process_html));
                 
-            }); // ← закрываем osd_dupe import
-        }); // ← закрываем pid_tuning_dupe import
-    }); // ← закрываем sensors_dupe import
+            }); 
+        }); 
+    }); 
 }
 
     function drawExpoCanvas(value, $element, color, width, height, clear) {
          if (!$element || typeof $element.getContext !== 'function') {
-            return;  // Выходим, если canvas не найден
+            return;  
         }   
         
         let context = $element.getContext("2d");
@@ -328,14 +322,11 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         $('#preview-yaw-expo').html(Math.floor(scaleRange(expo, 0, 200, 40, 100)) + "%");
 
     }
-    // 🔹 Инициализация подвкладки Sensors
+
     function initSensorsTab() {
-    // ✅ Проверка: если вкладка не активна — выходим
 
 
     console.log('Sensors tab: initializing...');
-
-    // === Вспомогательные функции (из sensors.js) ===
 
     function initSensorData(){
         for (var i = 0; i < 3; i++) {
@@ -434,16 +425,14 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
     function plot_temperature(enable) { if (enable) { $('.wrapper.temperature').show(); } else { $('.wrapper.temperature').hide(); } }
     function plot_debug(enable) { if (enable) { $('.wrapper.debug').show(); } else { $('.wrapper.debug').hide(); } }
 
-    // === Основная логика инициализации ===
-
-    // Отключение чекбоксов для отсутствующих сенсоров
+    
     var checkboxes = $('.tab-sensors .info .checkboxes input');
     if (!BitHelper.bit_check(FC.CONFIG.activeSensors, 2)) checkboxes.eq(2).prop('disabled', true); // mag
     if (!BitHelper.bit_check(FC.CONFIG.activeSensors, 4)) checkboxes.eq(4).prop('disabled', true); // sonar
     if (!BitHelper.bit_check(FC.CONFIG.activeSensors, 6)) checkboxes.eq(5).prop('disabled', true); // airspeed
     if (!BitHelper.bit_check(FC.CONFIG.activeSensors, 7)) checkboxes.eq(6).prop('disabled', true); // debug
 
-    // Обработчик изменения чекбоксов
+
     $('.tab-sensors .info .checkboxes input').on('change', function () {
         
         
@@ -464,7 +453,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         store.set('graphs_enabled', Array.from($('.tab-sensors .info .checkboxes input')).map(cb => $(cb).prop('checked')));
     });
 
-    // Восстановление настроек из storage
+
     const graphs_enabled = store.get('graphs_enabled', false);
     if (graphs_enabled) {
         var checkboxes = $('.tab-sensors .info .checkboxes input');
@@ -475,10 +464,8 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         $('.tab-sensors .info input:lt(4):not(:disabled)').prop('checked', true).trigger('change');
     }
 
-    // Инициализация данных сенсоров
     initSensorData();
 
-    // Setup variables
     var samples_gyro_i = 0, samples_accel_i = 0, samples_mag_i = 0,
         samples_altitude_i = 0, samples_sonar_i = 0, samples_airspeed_i = 0,
         samples_temperature_i = 0, samples_debug_i = 0;
@@ -525,7 +512,6 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         else raw_data_text_ements.z.push(el);
     });
 
-    // Настройки из storage
     const sensor_settings = store.get('sensor_settings', false);
     if (sensor_settings) {
         $('.tab-sensors select[name="gyro_refresh_rate"]').val(sensor_settings.rates.gyro);
@@ -540,7 +526,6 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         $('.tab-sensors select[name="debug_refresh_rate"]').val(sensor_settings.rates.debug);
     }
 
-    // Запуск polling только если вкладка активна
     if ($('#subtab-pid_dupe').hasClass('subtab__content--current')) {
         startPolling();
     }
@@ -551,7 +536,6 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         }
     });
 
-    // 🔹 Обработчик переключения подвкладок
     $('.subtab__header_label').on('click', function() {
         setTimeout(function() {
             const isSensorsActiveNow = $('#subtab-pid_dupe').hasClass('subtab__content--current');
@@ -570,9 +554,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         debugWin.window.getDebugTrace = function () { return FC.DEBUG_TRACE || ''; };
     });
 
-    // === Функция startPolling ===
     function startPolling() {
-        // 🔹 Проверка: не запускать polling, если подвкладка не активна
 
         var rates = {
             'gyro': parseInt($('.tab-sensors select[name="gyro_refresh_rate"]').val(), 10),
@@ -709,7 +691,8 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
         }
     }
     }
-    function initOSDTab (){
+        
+    async function initOSDTab (){
         console.log('[PID_DUPE] initOSDTab called');
 
         // Проверка: загружен ли модуль OSD
@@ -723,32 +706,47 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         console.log('[PID_DUPE] OSD Active:', isOSDActive);
 
-        // Инициализируем только если вкладка активна (экономия ресурсов)
-        if (isOSDActive) {
-            // Инициализация шрифтов и железа
+        try {
             FONT.initData();
             HARDWARE.init();
             
-            // Запуск обновления интерфейса OSD
-            // Используем setTimeout, чтобы DOM успел отрисоваться
+            if (!FONT.data.characters || FONT.data.characters.length === 0) {
+                console.log('[PID_DUPE] Loading default font...');
+                const response = await import('./../resources/osd/analogue/default.mcm?raw');
+                FONT.parseMCMFontFile(response.default);
+                console.log('[PID_DUPE] Font loaded, characters count:', FONT.data.characters.length);
+            }
+
+            if (!OSD.data || !OSD.data.supported) {
+                await new Promise((resolve, reject) => {
+                    OSD.reload(() => {
+                        OSD.data.supported ? resolve() : reject(new Error('OSD not supported'));
+                    });
+                });
+            }
+
+            OSD.updateDisplaySize();
+
+            OSD.GUI.updateAll();
+
             setTimeout(() => {
-                if (OSD.data && OSD.data.supported) {
-                    OSD.GUI.updateAll();
-                } else {
-                    // Если данные еще не загружены, пробуем запустить reload
-                    OSD.GUI.update();
-                }
-            }, 100);
+                $('.preview .char img').css('pointer-events', 'none');
+                OSD.GUI.updateGuidesView($('#videoGuides input').is(':checked'));
+            }, 50);
+
+            console.log('[PID_DUPE] OSD tab initialized successfully');
+            
+            } catch (err) {
+                console.error('[PID_DUPE] OSD init failed:', err);
+            }
+
         }
-    }
+    
 
 
     function process_html() {
-        // translate to user-selected language
+        
         i18n.localize();
-
-        //tabs.init($('.tab-pid_tuning_dupe'));
-
 
         $('#ez_tune_enabled').on('change', function () {
             if ($(this).is(":checked")) {
@@ -812,7 +810,7 @@ TABS.pid_tuning_dupe.initialize = function (callback) {
 
         tabs.init($('.tab-pid_tuning_dupe'));
 
-        // 🔹 Проверка: какая подвкладка активна?
+        // Проверка: какая подвкладка активна? (отключена)
         const isSensorsActive = $('#subtab-pid_dupe').hasClass('subtab__content--current');
         const isOSDActive = $('#subtab-filters').hasClass('subtab__content--current');
 
